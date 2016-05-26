@@ -35,12 +35,22 @@ class qbehaviour_deferredpenalty extends qbehaviour_deferredfeedback {
         $penalty = $this->question->penalty;
         // To reduce the penalty slightly uncomment following.
         // $penalty = $penalty / (1.0 + $penalty);
-        $adjustment = 1.0 - $penalty;
+        // $adjustment = 1.0 - $penalty;
+
+        global $DB, $USER;
+        $current_user_quiz_attempt = $DB->get_record_sql('SELECT * FROM `mdl_quiz_attempts` WHERE `userid` = '.$USER->id.' 
+        AND `uniqueid` = '.$this->qa->get_usage_id().' ORDER BY `mdl_quiz_attempts`.`attempt` DESC LIMIT 1');
+        // Attempt 1 => Do not use penalty.
+        // Attempt 2 => Use penalty once.
+        // Attempt 3 => Use penalty twice.
+        $attempt_penalty = ($current_user_quiz_attempt->attempt - 1) * $penalty;
+        $adjustment = 1.0 - $attempt_penalty;
+
         if ($keep == question_attempt::KEEP &&
                 $fraction != null) {
             $pendingstep->set_fraction($fraction * $adjustment);
         }
-        $this->qa->set_metadata('penalty', $penalty);
+        $this->qa->set_metadata('penalty', $attempt_penalty);
         return $keep;
     }
 
